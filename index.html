@@ -9,36 +9,750 @@
   <meta name="Prosjekt " content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+
   <!-- leaflet-->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
-        integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-        crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
-          integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
-          crossorigin=""></script>
+  <link rel="stylesheet" href="lib/leaflet.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+
+
+  <script src="lib/leaflet.js"></script>
+  <script src="lib/leaflet.ajax.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script> <!-- Leaflet Draw Plugin -->
+  <script src="jquery-3.3.1.min.js"></script>
+  <script src="leaflet-sidebar.js"></script>
+  <script src="lib/turf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.3/proj4.js"></script>
+  <script src="lib/jszip.js"></script>
+  <script src="lib/jszip-utils.js"></script>
+  <script src="lib/preprocess.js"></script>
+  <script src="lib/preview.js"></script>
 
   <link rel="stylesheet" href="css.css"/>
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+
+
 
 </head>
 
-
 <body>
+
+<div id="sidebar" class="leaflet-sidebar collapsed">
+
+  <!-- nav tabs -->
+  <div class="leaflet-sidebar-tabs">
+    <!-- top aligned tabs -->
+    <ul role="tablist">
+      <li><a href="#home" role="tab"><i class="fa fa-bars active"></i></a></li>
+
+    </ul>
+
+    <!-- bottom aligned tabs -->
+    <ul role="tablist">
+      <li><a href="https://github.com/gustavhf"><i class="fab fa-github"></i></a></li>
+    </ul>
+  </div>
+
+  <!-- panel content -->
+  <div class="leaflet-sidebar-content">
+    <div class="leaflet-sidebar-pane" id="home">
+      <h1 class="leaflet-sidebar-header">
+        gusGIS
+        <span class="leaflet-sidebar-close"><i class="fa fa-caret-left"></i></span>
+      </h1>
+      <p style="font-size: 18px; font-weight: bold;">Welcome to gusGIS!</p>
+      <p style="font-weight: bold";> This is a simple GIS where you can do awesome geometric operations on layers!</p>
+      <img src="lib\images\left.png" width="40px" height="40px" style="float: left; margin-right: 10px";/>
+      <p>On the left side in this sidebar there are a number of icons. Each of these icons represents a function - Upload, buffer, union, difference, intersection, filter, style and delete.</p>
+      <img class="flip-horizontal" src="lib\images\left.png" width="40px" height="40px" style="float: right; margin-left: 10px";/>
+      <p>On the right side of the sidebar there are other icons. A plus and minus for zooming on the map, this can also be done by scrolling with the mouse. Below this there are some drawing tools to draw geometric objects. These wil be saved as layers you can later operate on.</p>
+      <p>In the top right corner there is a layers icon. Here you can turn on and off the visibility of every layer added to the map.</p>
+
+
+     </div>
+    <div class="leaflet-sidebar-pane">
+    </div>
+  </div>
+</div>
 
   <!-- leaflet-->
   <div id="mapid"></div>
-
-
-
-  <script>
-  var mymap = L.map('mapid').setView([51.505, -0.09], 13);
-  L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-      attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-      maxZoom: 18,
-      id: 'mapbox.streets',
-      accessToken: 'pk.eyJ1IjoiZ3VzdGF2aGYiLCJhIjoiY2pjcmZ0cnRzMDZzNDMybzVyMnphd2J6bCJ9.a-7XGwZwPBbl_UR2TJQbFQ'
-  }).addTo(mymap);
-  </script>
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 </body>
+<script>
+
+  L.Control.Layers.include( {
+      getOverlays: function() {
+          var layers = [];
+
+          this._layers.forEach(function(obj) {
+              if(obj.overlay) {
+                  layers.push(obj)
+              }
+          });
+          return layers;
+      },
+
+      getLayerWithId: function(id) {
+          var object = null;
+
+          this._layers.forEach(function(obj) {
+
+              if(obj.overlay) {
+
+                  if(Number(obj._leaflet_id) === Number(id)) {
+                      object = obj;
+                  }
+              }
+          });
+          return object;
+      },
+
+      changeLayerName: function(id) {
+          var layer = this._getLayer(id);
+          console.log(layer);
+      }
+  });
+    // standard leaflet map setup
+    var map = L.map('mapid');
+    map.setView([63.40, 10.43], 13);
+    var base = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        maxZoom: 18,
+        id: 'mapbox.streets',
+        accessToken: 'pk.eyJ1IjoiZ3VzdGF2aGYiLCJhIjoiY2pjcmZ0cnRzMDZzNDMybzVyMnphd2J6bCJ9.a-7XGwZwPBbl_UR2TJQbFQ'
+    }).addTo(map);
+    var base2 = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        maxZoom: 18,
+        id: 'mapbox.satellite',
+        accessToken: 'pk.eyJ1IjoiZ3VzdGF2aGYiLCJhIjoiY2pjcmZ0cnRzMDZzNDMybzVyMnphd2J6bCJ9.a-7XGwZwPBbl_UR2TJQbFQ'
+    });
+
+    // create the sidebar instance and add it to the map
+    var sidebar = L.control.sidebar({ container: 'sidebar' })
+        .addTo(map)
+        .open('home');
+    // Sidebar Info
+    sidebar
+        .addPanel({
+            id:   'info',
+            tab:  '<i class="fa fa-info"></i>',
+            title: 'Info',
+            pane: '<p>Welcome to gusGIS. This is an application where you can do things!<p/>',
+        })
+        // Sidebar Fileimport
+        .addPanel({
+            id:   'fileimport',
+            tab:  '<div style="border-top: 1px solid black"><i class="fa fa-upload"></i></div>',
+            title: 'File Import',
+            pane: '<p class="header2">What can I do here?<p/>' +
+                '<p class="text">If you have a GeoJSON or shape-file you can upload it here. After that you will be able to perform operations on your added layers. Push the "Choose files" button and open the file you would like to add to the map. Remember to write what you would like to name your layer in input-field before uploading. After this the layer will appear on the map. You can turn it on/off in the top right corner. <p/>' +
+                '<p class="text"><b>PS:</b> If you have a shape-file. Remember to upload all the coherent files to it so you can utilize all the information that comes with it. If so you can later filter out specific information later with the filter function. Upload the shape-file as zipped file.<p/>' +
+                '<input id="fileImport" type="file" accept=".geojson, .zip" multiple><input class="inputThing" id="filnavn" type="text"><button class="layerButton" id="import2">Import</button><div id="import_list"></div>',
+            disabled: false,
+        })
+        // Sidebar buffer
+        .addPanel({
+            id:   'buffer',
+            tab:  '<div style="font-weight: bolder; border-top: 1px solid black">B</div>',
+            title: 'Buffer',
+            pane: '<p class="header2">What is a buffer?<p/>' +
+                '<p class="text">A buffer is a zone around a map feature measured in units of distance or time. A buffer is useful for proximity analysis.<p/>' +
+                '<p class="header2">How to use this function<p/>' +
+                '<p class="text">Press the "update layers" button the get the latest added layers to your list to choose from. After this pick a layer in the "choose layer" dropdown menu. After this you can add a buffer distance in the input field and press the "Create buffer" button. A buffer will then appear on the map. You can turn the new buffer layer on and off in the top-right layer list on the screen.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="buffer_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><input class= "inputThing" id="bufferDistance" type="number" placeholder="Buffer distance [km]" required><button class="layerButton" id="bufferButton">CREATE BUFFER</button>'+
+                '<img src="lib/images/buffer.png" width="98%"; height="98%"; style="margin-top: 35px">',
+            disabled: false,
+        })
+        // Sidebar union
+        .addPanel({
+            id:   'Union',
+            tab:  '<div style="font-weight: bolder; border-top: 1px solid black">U</div>',
+            title: 'Union',
+            pane: '<p class="header2">What is union??<p/>' +
+                '<p class="text">Computes a geometric union of the input features. All features and their attributes will be written to the output feature class<p/>' +
+                '<p class="header2">How to use this function??<p/>' +
+                '<p class="text">Start with pressing the "Update layers" button to make sure you have the most recent layers to choose from. After this you pick one layer from each of the two dropwdown menus you would like to use the union function on. After pressing the "Create union" button a new layer with the union result will be added. The union layer can be turned on/off in the layer-list in the top right corner.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="union_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><select id="union_layerList2" class="layerList"><option selected disabled>-- Choose layer</option></select><button  class="layerButton" id="unionButton">Create union</button>'+
+                '<img src="lib/images/union.gif" width="95%"; height="95%"; style="margin-top: 35px">',
+            disabled: false,
+        })
+        // Sidebar difference
+        .addPanel({
+            id:   'Difference',
+            tab:  '<div style="font-weight: bolder; border-top: 1px solid black">D</div>',
+            title: 'Difference',
+            pane: '<p class="header2">What is difference??<p/>' +
+                '<p class="text">Features or portions of features in the input and update features that do not overlap will be written to the output feature class.<p/>' +
+                '<p class="header2">How to use this function?<p/>' +
+                '<p class="text">Start with pressing the "Update layers" button to make sure you have the most recent layers to choose from. After this you pick one layer from each of the two dropwdown menus you would like to use the difference function on. After pressing the "Create difference" button a new layer with the difference operation will be added. The difference layer can be turned on/off in the layer-list in the top right corner.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="difference_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><select id="difference_layerList2" class="layerList"><option selected disabled>-- Choose layer</option></select><button  class="layerButton" id="differenceButton">Create Difference</button>'+
+             '<img src="lib/images/difference.gif" width="95%"; height="95%"; style="margin-top: 35px">',
+            disabled: false,
+        })
+        // Sidebar intersect
+        .addPanel({
+            id:   'Intersect',
+            tab:  '<div style="font-weight: bolder; border-top: 1px solid black">I</div>',
+            title: 'Intersect',
+            pane:  '<p class="header2">What is intersect?<p/>' +
+                '<p class="text">The intersect operation computes a geometric intersection of the input features. Features or portions of features which overlap in all layers and/or feature classes will be written to the output feature class.<p/>' +
+                '<p class="header2">How to use this function<p/>' +
+                '<p class="text">Start with pressing the "Update layers" button to make sure you have the most recent layers to choose from. After this you pick one layer from each of the two dropwdown menus you would like to use the intersect function on. After pressing the "Create intersection" button a new layer with the intersection will be added. The intersection layer can be turned on/off in the layer-list in the top right corner.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="intersect_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><select id="intersect_layerList2" class="layerList"><option selected disabled>-- Choose layer</option></select><button  class="layerButton" id="intersectButton">Create Intersection</button>'+
+            '<img src="lib/images/intersect.gif" width="95%"; height="95%"; style="margin-top: 35px">',
+            disabled: false,
+        })
+        // Sidebar Filter
+        .addPanel({
+            id:   'Filter',
+            tab:  '<div style="font-weight: bolder; border-top: 1px solid black">F</div>',
+            title: 'Filter',
+            pane:  '<p class="header2">What is filter?<p/>' +
+                '<p class="text">This function filters out certain ionformation from a layer. A layer might contain many attributes and with the filter function it is possible to choose if you would like the file to contain or not contain an attribute. If the attribute has a value you can choose to filter out information which is above or below a number.<p/>' +
+                '<p class="header2">How to use this function<p/>' +
+                '<p class="text">Make sure you have the layer you would like to operate on by pressing the "Update layers" button. After this choose which layer you would like to filter on. Then you have to choose which property you would like as an output from your layer. Then you need to decide if your attribute should be equal (==), not equal (!=), above (>) or below (<) your desired value. Property might be "OBJTYPE", sign can be equal to (==) and if the value you choose is "Gravplass" you will get a layer which displays every graveyard and nothing else from your first layer.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div>' +
+                '<select id="filter_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><br>' +
+                '<select id="propertySelect" class= "propertySelect" ><option selected disabled>-- Choose property</option></select>' +
+                '<select id="signSelect" class="signSelect"><option selected disabled>-- Choose sign</option></select>' +
+                '<select id="propertyValue" class="propertyValue"><option selected disabled>-- Choose value</option></select>' +
+                '<button  class="layerButton" id="filterButton">Create Filter</button>',
+            disabled: false,
+        })
+        // Sidebar styling
+        .addPanel({
+            id: 'Style',
+            tab: '<div style="border-top: 1px solid black"><i class="fas fa-palette"></i></div>',
+            title: 'Style layer',
+            pane: '<p class="header2">What can I do here?<p/>' +
+                '<p class="text">Style layers. Do you think it is boring that every layer has the same boring color? Hard to tell them apart? By giving each layer a different color it will be easier. Choose a layer from the dropdown menu, pick you fill color and fill color opacity with the slider. Then you can give it some additional freshness by giving it a colored outline in the second color-box. The slider next to it defines outline steentgh. Remember to press the "Apply color" button to color the layer.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="style_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select></div>' +
+                '<p style="font-weight: bolder; margin-bottom: 0px">Fill color</p>' +
+                '<input type="color" class="color" id="fillColorPicker">' +
+                '<input type="range" min="0" max="100" value="1" class="slider" id="opacity">' +
+                '<p style="font-weight: bolder; margin-bottom: 0px; margin-top: 2px">Outline color</p>' +
+                '<input type="color" class="color" id="colorPicker">' +
+                '<input type="range" min="0" max="10" value="2" class="slider" id="weight">' +
+                '<button class="layerButton" id="applyStyle">Apply Color</button>' +
+                ''
+        })
+        // Sidebar delete
+        .addPanel({
+            id:   'Delete',
+            tab:  '<div style="border-top: 1px solid black"><i class="fa fa-trash"></i></div>',
+            title: 'Delete layer',
+            pane: '<p class="header2">What can I do here?<p/>' +
+                '<p class="text">Delete layers. So you have gone berserk and pushed a button one too many times? You can just turn their visibilty off in the top right corner or delete them. If you would like to delete them, look no further. Update the layer list, choose which layer you would like to delete from the dropdown menu and hit the "Delete layer" button.<p/>' +
+                '<div><button class="layerUpdate">UPDATE LAYERS</button></div><select id="delete_layerList" class="layerList"><option selected disabled>-- Choose layer</option></select><button  class="layerButton" id="deleteButton">Delete layer</button>',
+        });
+    // be notified when a panel is opened
+    sidebar.on('content', function (ev) {
+        switch (ev.id) {
+            case 'autopan':
+                sidebar.options.autopan = true;
+                break;
+            default:
+                sidebar.options.autopan = false;
+        }
+    });
+    var userid = 0;
+    function addUser() {
+        sidebar.addPanel({
+            id:   'user' + userid++,
+            tab:  '<i class="fa fa-user"></i>',
+            title: 'User Profile ' + userid,
+            pane: '<p>user ipsum dolor sit amet</p>',
+        });
+    }
+
+    var controls = L.control.layers({"Map": base, "Satellite": base2 }, null, {collapsed: true}).addTo(map);
+
+    var overlaysId = [];
+
+    //leaflet draw
+    // FeatureGroup is to store editable layers
+    var editableLayers = new L.FeatureGroup();
+    overlaysId.push(L.Util.stamp(editableLayers));
+
+    map.addLayer(editableLayers);
+    editableLayers.addTo(map);
+    var drawControl = new L.Control.Draw({
+        draw: {
+            circle:false
+        },
+        edit: {
+            featureGroup: editableLayers,
+            edit:false,
+            remove:false
+        }
+    });
+    map.addControl(drawControl);
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        var tempLayer = new L.FeatureGroup().addTo(map);
+        var type = e.layerType,
+            layer = e.layer,
+            feature = layer.feature = layer.feature || {}; //Initialize feature
+        var props = feature.properties = feature.properties || {}; // Initialize feature.properties
+        feature.type = "Feature";
+        tempLayer.addLayer(layer);
+        controls.addOverlay(tempLayer, type);
+        if(type === "circle"){
+            console.log(layer.toGeoJSON());
+        }
+        //drawControl.setDrawingOptions({edit: {featureGroup: new L.FeatureGroup()}})
+        //editableLayers.addLayer(layer);
+        //controls.addOverlay(editableLayers, type);
+    });
+
+    map.on('overlayadd', function(e) {
+        map.eachLayer(function(layer) {
+            console.log(layer);
+        })
+    });
+
+    function updateLayers() {
+        var targets = document.getElementsByClassName("layerList");
+        for (var i = 0; i < targets.length; i++) {
+            while (targets[i].children.length > 1) {
+                targets[i].removeChild(targets[i].children[1]);
+            }
+        }
+
+        $(".layerList").append(option);
+
+        var layers = controls.getOverlays();
+
+        for(var i = 0; i < layers.length; i++) {
+            var option = document.createElement("OPTION");
+            option.innerHTML = layers[i].name;
+            option.value = "" + L.Util.stamp(layers[i]);
+            $(".layerList").append(option);
+        }
+
+    }
+    //buffer//
+
+    $(".layerUpdate").click(updateLayers);
+
+    $("#bufferButton").click(function() {
+        var selected = $("#buffer_layerList").val();
+        var distance = $("#bufferDistance").val();
+        if(distance < 0) {
+            return;
+        }
+        var inLayer = controls.getLayerWithId(selected);
+        var bufferLayer = L.layerGroup().addTo(map);
+        var buffer = turf.buffer(inLayer.layer.toGeoJSON(), distance, {units:'kilometers'});
+        var name = inLayer.name + "_buffer_" + distance;
+        L.geoJSON(buffer, {
+            onEachFeature: function(feature, layer) {
+                bufferLayer.addLayer(layer);
+            }
+        });
+        controls.addOverlay(bufferLayer, name);
+
+    });
+
+    //union//
+
+  $("#unionUpdate").click(function() {
+      var targets = document.getElementsByClassName("layerList");
+      for (var i = 0; i < targets.length; i++) {
+          while (targets[i].children.length > 1) {
+              targets[i].removeChild(targets[i].children[1]);
+          }
+      }
+
+      $(".layerList").append(option);
+
+      var layers = controls.getOverlays();
+
+      for(var i = 0; i < layers.length; i++) {
+          var option = document.createElement("OPTION");
+          option.innerHTML = layers[i].name;
+          option.value = "" + L.Util.stamp(layers[i]);
+          $(".layerList").append(option);
+      }
+
+  });
+
+  $("#unionButton").click(function() {
+      var selected1 = $("#union_layerList").val();
+      var selected2 = $("#union_layerList2").val();
+      var inLayer = controls.getLayerWithId(selected1);
+      var inLayer2 = controls.getLayerWithId(selected2);
+      var unionLayer = L.layerGroup().addTo(map);
+      var layers1 = inLayer.layer.getLayers();
+      var layers2 = inLayer2.layer.getLayers();
+      var layers = layers1.concat(layers2);
+      var union = layers[0].toGeoJSON();
+      for(var i = 1; i < layers.length; i++) {
+          union = turf.union(union, layers[i].toGeoJSON());
+      }
+      var name = inLayer.name + "union" + inLayer2.name + "union";
+      L.geoJSON(union, {
+          onEachFeature: function(feature, layer) {
+              unionLayer.addLayer(layer);
+          }
+      });
+      controls.addOverlay(unionLayer, name);
+      updateLayers();
+
+  });
+
+  //Difference//
+
+  $("#differenceUpdate").click(function() {
+      var targets = document.getElementsByClassName("layerList");
+      for (var i = 0; i < targets.length; i++) {
+          while (targets[i].children.length > 1) {
+              targets[i].removeChild(targets[i].children[1]);
+          }
+      }
+
+      $(".layerList").append(option);
+
+      var layers = controls.getOverlays();
+
+      for(var i = 0; i < layers.length; i++) {
+          var option = document.createElement("OPTION");
+          option.innerHTML = layers[i].name;
+          option.value = "" + L.Util.stamp(layers[i]);
+          $(".layerList").append(option);
+      }
+
+  });
+
+  $("#differenceButton").click(function() {
+      var selected1 = $("#difference_layerList").val();
+      var selected2 = $("#difference_layerList2").val();
+      var inLayer = controls.getLayerWithId(selected1);
+      var inLayer2 = controls.getLayerWithId(selected2);
+      var differenceLayer = L.layerGroup().addTo(map);
+      var layers1 = inLayer.layer.getLayers();
+      var layers2 = inLayer2.layer.getLayers();
+      var layers = layers1.concat(layers2);
+      var difference = layers[0].toGeoJSON();
+      for(var i = 1; i < layers.length; i++) {
+          difference = turf.difference(difference, layers[i].toGeoJSON());
+      }
+      var name = inLayer.name + "difference" + inLayer2.name + "difference";
+      L.geoJSON(difference, {
+          onEachFeature: function(feature, layer) {
+              differenceLayer.addLayer(layer);
+          }
+      });
+      controls.addOverlay(differenceLayer, name);
+      updateLayers();
+
+  });
+
+  //Intersection//
+
+  $("#intersectUpdate").click(function() {
+      var targets = document.getElementsByClassName("layerList");
+      for (var i = 0; i < targets.length; i++) {
+          while (targets[i].children.length > 1) {
+              targets[i].removeChild(targets[i].children[1]);
+          }
+      }
+
+      $(".layerList").append(option);
+
+      var layers = controls.getOverlays();
+
+      for(var i = 0; i < layers.length; i++) {
+          var option = document.createElement("OPTION");
+          option.innerHTML = layers[i].name;
+          option.value = "" + L.Util.stamp(layers[i]);
+          $(".layerList").append(option);
+      }
+
+  });
+
+  $("#intersectButton").click(function() {
+      var selected1 = $("#intersect_layerList").val();
+      var selected2 = $("#intersect_layerList2").val();
+      var inLayer = controls.getLayerWithId(selected1);
+      var inLayer2 = controls.getLayerWithId(selected2);
+      var intersectLayer = L.layerGroup().addTo(map);
+      var layers1 = inLayer.layer.getLayers();
+      var layers2 = inLayer2.layer.getLayers();
+      var layers = layers1.concat(layers2);
+      var intersect = layers[0].toGeoJSON();
+      for(var i = 1; i < layers.length; i++) {
+          intersect = turf.intersect(intersect, layers[i].toGeoJSON());
+      }
+      var name = inLayer.name + "intersect" + inLayer2.name + "intersect";
+      L.geoJSON(intersect, {
+          onEachFeature: function(feature, layer) {
+              intersectLayer.addLayer(layer);
+          }
+      });
+      controls.addOverlay(intersectLayer, name);
+      updateLayers();
+
+  });
+
+  //Filter//
+  $("#filter_layerList").on('change', function() {
+     var layers = controls.getLayerWithId($( this ).val()).layer.getLayers();
+     var properties = layers[0].feature.properties;
+     for (var key in properties) {
+         var string = "<option>" + key +"</option>";
+         $("#propertySelect").append($(string));
+      }
+  });
+
+  $("#propertySelect").on('change', function() {
+      var layers = controls.getLayerWithId($( "#filter_layerList" ).val()).layer.getLayers();
+      var prop = $( this ).val();
+      console.log(prop)
+      var vals = [];
+      for (var i = 0; i < layers.length; i++) {
+          if (! vals.includes(layers[i].feature.properties[prop])) {
+              vals.push(layers[i].feature.properties[prop]);
+          }
+      }
+      for (var i = 0; i < vals.length; i++) {
+          var string = "<option>" + vals[i] +"</option>";
+          $("#propertyValue").append($(string));
+      }
+
+      if(Number(vals[0])) {
+          $("#signSelect").append("<option>'=='</option>");
+          $("#signSelect").append("<option>'!='</option>");
+          $("#signSelect").append("<option>'<'</option>");
+          $("#signSelect").append("<option>'>'</option>");
+      } else {
+          $("#signSelect").append("<option>'=='</option>");
+          $("#signSelect").append("<option>'!='</option>");
+      }
+  });
+
+  $("#filterButton").click(function(){
+      var layers = controls.getLayerWithId($("#filter_layerList").val()).layer.getLayers();
+      var property = $("#propertySelect").val();
+      var sign = $("#signSelect").val();
+      var value = $("#propertyValue").val();
+      var filterLayer = L.layerGroup().addTo(map);
+      for (var i = 0; i < layers.length; i++) {
+          if(sign == "'=='") {
+              if(layers[i].feature.properties[property] == value) {
+                  filterLayer.addLayer(cloneLayer(layers[i]));
+              }
+          } else if (sign == "'!='") {
+              if(layers[i].feature.properties[property] != value) {
+                  filterLayer.addLayer(cloneLayer(layers[i]));
+              }
+          } else if (sign == "'>'") {
+              if(layers[i].feature.properties[property] > value) {
+                  filterLayer.addLayer(cloneLayer(layers[i]));
+              }
+          } else if (sign == "'<'") {
+              if(layers[i].feature.properties[property] < value) {
+                  filterLayer.addLayer(cloneLayer(layers[i]));
+              }
+          }
+      }
+      controls.addOverlay(filterLayer, "filter_" + controls.getLayerWithId($("#filter_layerList").val()).name + sign + value).addTo(map);
+  });
+
+  function cloneOptions (options) {
+      var ret = {};
+      for (var i in options) {
+          var item = options[i];
+          if (item && item.clone) {
+              ret[i] = item.clone();
+          } else if (item instanceof L.Layer) {
+              ret[i] = cloneLayer(item);
+          } else {
+              ret[i] = item;
+          }
+      }
+      return ret;
+  }
+
+  function cloneInnerLayers (layer) {
+      var layers = [];
+      layer.eachLayer(function (inner) {
+          layers.push(cloneLayer(inner));
+      });
+      return layers;
+  }
+
+  function cloneLayer (layer) {
+      var options = cloneOptions(layer.options);
+
+      // we need to test for the most specific class first, i.e.
+      // Circle before CircleMarker
+
+      // Renderers
+      if (layer instanceof L.SVG) {
+          return L.svg(options);
+      }
+      if (layer instanceof L.Canvas) {
+          return L.canvas(options);
+      }
+
+      // GoogleMutant GridLayer
+      if (L.GridLayer.GoogleMutant && layer instanceof L.GridLayer.GoogleMutant) {
+          var googleLayer = L.gridLayer.googleMutant(options);
+
+          layer._GAPIPromise.then(function () {
+              var subLayers = Object.keys(layer._subLayers);
+
+              for (var i in subLayers) {
+                  googleLayer.addGoogleLayer(subLayers[i]);
+              }
+          });
+
+          return googleLayer;
+      }
+
+      // Tile layers
+      if (layer instanceof L.TileLayer.WMS) {
+          return L.tileLayer.wms(layer._url, options);
+      }
+      if (layer instanceof L.TileLayer) {
+          return L.tileLayer(layer._url, options);
+      }
+      if (layer instanceof L.ImageOverlay) {
+          return L.imageOverlay(layer._url, layer._bounds, options);
+      }
+
+      // Marker layers
+      if (layer instanceof L.Marker) {
+          return L.marker(layer.getLatLng(), options);
+      }
+
+      if (layer instanceof L.Circle) {
+          return L.circle(layer.getLatLng(), layer.getRadius(), options);
+      }
+      if (layer instanceof L.CircleMarker) {
+          return L.circleMarker(layer.getLatLng(), options);
+      }
+
+      if (layer instanceof L.Rectangle) {
+          return L.rectangle(layer.getBounds(), options);
+      }
+      if (layer instanceof L.Polygon) {
+          return L.polygon(layer.getLatLngs(), options);
+      }
+      if (layer instanceof L.Polyline) {
+          return L.polyline(layer.getLatLngs(), options);
+      }
+
+      if (layer instanceof L.GeoJSON) {
+          return L.geoJson(layer.toGeoJSON(), options);
+      }
+
+      if (layer instanceof L.FeatureGroup) {
+          return L.featureGroup(cloneInnerLayers(layer));
+      }
+      if (layer instanceof L.LayerGroup) {
+          return L.layerGroup(cloneInnerLayers(layer));
+      }
+
+      throw 'Unknown layer, cannot clone this layer. Leaflet-version: ' + L.version;
+  }
+
+  if (typeof exports === 'object') {
+      module.exports = cloneLayer;
+  }
+
+//delete//
+
+  $("#deleteButton").click(function() {
+      var selected = $("#delete_layerList").val();
+      var layer = controls.getLayerWithId(selected).layer.remove();
+      controls.removeLayer(layer);
+      updateLayers();
+  });
+
+  //import
+
+    $("#import2").click(function() {
+        var files = $("#fileImport").prop('files'); // FileList object
+        // Loop through the FileList.
+        for (var i = 0, f; f = files[i]; i++) {
+            if(f.name.split(".").pop() == "zip") {
+                loadshp({
+                    url: f,
+                    encoding: 'utf-8',
+                    EPSG: 4326
+                }, function(geojson) {
+                    newLayer = L.layerGroup().addTo(map);
+                    L.geoJSON(geojson, {
+                        onEachFeature: function(feature, layer) {
+                            res = "";
+                            for (var key in feature.properties) {
+                                res += "<strong>" + key + ":</strong>  " + feature.properties[key] + "<br>";
+                            }
+                            layer.bindPopup(res);
+                            newLayer.addLayer(layer);
+                        }
+                    });
+                    controls.addOverlay(newLayer, $("#filnavn").val());
+                });
+            }
+            if(f.name.split(".").pop() == "geojson") {
+
+                var reader = new FileReader();
+                // Closure to capture the file information.
+                reader.onload = (function(theFile) {
+                    return function(e) {
+                        geojson = JSON.parse(e.target.result);
+                        newLayer = L.layerGroup();
+                        L.geoJSON(geojson, {
+                            onEachFeature: function(feature, layer) {
+                                newLayer.addLayer(layer);
+                            }
+                        });
+                        var name = $("#filnavn").val();
+                        controls.addOverlay(newLayer, name)
+                    };
+                })(f);
+                // Read in the image file as a data URL.
+                reader.readAsText(f);
+            }
+        }
+    });
+
+    $("#fileImport").change(function(evt) {
+        var files = evt.target.files; // FileList object
+        // files is a FileList of File objects. List some properties.
+        var output = [];
+        for (var i = 0, f; f = files[i]; i++) {
+            if(f.name.split(".").pop() != "geojson") {
+                continue;
+            }
+            output.push('<li><strong>', escape(f.name), '</strong> last modified: ',
+                f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                '</li>');
+        }
+        $("#import_list").html('<ul>' + output.join('') + '</ul>');
+    });
+
+    $("#style_layerList").on('change', function() {
+        var layer = controls.getLayerWithId($( this ).val()).layer;
+
+    });
+
+    $("#applyStyle").click(function() {
+      var fillColor = $("#fillColorPicker").val();
+      var color = $("#colorPicker").val();
+      var opacity = $("#opacity").val()/100;
+      var weight = $("#weight").val();
+      var mainLayer = controls.getLayerWithId($("#style_layerList").val()).layer;
+      mainLayer.invoke('setStyle',{ //invoke ser til at fargelegging også funker på shape-filen
+          fillColor: fillColor,
+          color: color,
+          fillOpacity: opacity,
+          weight: weight
+      });
+    });
+
+</script>
+
 </html>
